@@ -57,7 +57,8 @@
             z-index: 100;
         }
 
-        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-info { display: flex; align-items: center; gap: 12px; cursor: pointer; transition: opacity 0.2s; }
+        .user-info:active { opacity: 0.7; }
         
         .avatar {
             width: 48px; height: 48px;
@@ -293,6 +294,22 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(90, 103, 216, 0.5); }
         .btn:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(90, 103, 216, 0.4); }
 
+        /* Login Screen */
+        #loginScreen {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            z-index: 6000; display: flex; justify-content: center; align-items: center;
+        }
+        .login-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 30px; width: 100%; }
+        .btn-login { 
+            padding: 18px; font-size: 1.4em; border-radius: 20px; border: none; 
+            background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+            cursor: pointer; transition: all 0.2s; font-weight: 800; 
+            color: var(--text-color); display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+        .btn-login:hover { transform: scale(1.05); color: var(--primary-color); }
+        .btn-login:active { transform: scale(0.98); }
+
         /* Sync Status Icon */
         #syncStatus {
             position: fixed; bottom: 15px; right: 15px; 
@@ -328,17 +345,30 @@
 </head>
 <body>
 
-<div id="loadingScreen">
+<div id="loadingScreen" style="display:none;">
     <div class="spinner"></div>
     <div style="color: #4a5568; font-weight: bold;">連線雲端資料庫...</div>
 </div>
 
+<!-- 登入選擇畫面 -->
+<div id="loginScreen" class="modal active" style="display: flex;">
+    <div class="modal-content" style="background: rgba(255,255,255,0.95); max-width: 400px;">
+        <h2 style="color: var(--primary-color); font-size: 2em; margin-bottom: 10px;">👋 歡迎回來</h2>
+        <p style="font-size: 1.2em; color: #718096;">請選擇您的身分：</p>
+        <div class="login-grid">
+            <button class="btn-login" onclick="login('Pierce')">👦 Pierce</button>
+            <button class="btn-login" onclick="login('Allen')">🧑 Allen</button>
+            <button class="btn-login" onclick="login('James')">👨 James</button>
+        </div>
+    </div>
+</div>
+
 <header>
-    <div class="user-info">
+    <div class="user-info" onclick="showLogoutOption()" title="點擊登出">
         <div class="avatar" id="currentAvatar">👦</div>
         <div>
             <div id="userTitle">初學新手</div>
-            <div style="font-size: 0.8em; opacity: 0.8;">等級 <span id="level">1</span></div>
+            <div style="font-size: 0.8em; opacity: 0.8;">等級 <span id="level">1</span> <span id="usernameDisplay" style="font-weight:normal; margin-left:5px; background:rgba(255,255,255,0.2); padding:0 5px; border-radius:5px;"></span></div>
         </div>
     </div>
     
@@ -448,7 +478,7 @@
 </div>
 
 <!-- 通用訊息/確認彈窗 -->
-<div id="msgModal" class="modal" style="z-index: 2000;">
+<div id="msgModal" class="modal" style="z-index: 7000;">
     <div class="modal-content" style="max-width: 380px;">
         <h3 id="msgTitle" style="font-size: 1.5em; margin-bottom: 10px;">提示</h3>
         <p id="msgContent" style="margin: 15px 0; font-size: 1.2em; color: #4a5568; line-height: 1.5;"></p>
@@ -640,69 +670,95 @@
 
     // --- 3. 初始化與雲端同步 ---
     async function init() {
-        renderCategories();
-        // 檢查是否有本地 UserID，若無則生成
-        let storedId = localStorage.getItem('spellingGameUserId');
-        if (!storedId) {
-            storedId = 'user_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('spellingGameUserId', storedId);
+        renderCategories(); // Prepare UI
+        
+        // 檢查是否有儲存的使用者
+        const savedName = localStorage.getItem('spellingGameUserName');
+        if (savedName) {
+            await login(savedName, false); // 自動登入，不顯示載入動畫
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex'; // 顯示登入畫面
+            document.getElementById('loadingScreen').style.display = 'none'; // 隱藏全域載入
         }
-        state.userId = storedId;
+    }
 
+    // 登入邏輯
+    async function login(name, showLoading = true) {
+        state.username = name;
+        // 產生固定的 User ID
+        state.userId = "USER_" + name.toUpperCase();
+        localStorage.setItem('spellingGameUserName', name);
+        
+        document.getElementById('loginScreen').style.display = 'none';
+        if(showLoading) document.getElementById('loadingScreen').style.display = 'flex';
+
+        // 載入資料 (雲端或本地)
         if (GAS_URL) {
-            document.getElementById('loadingScreen').style.display = 'flex';
             try {
-                // 嘗試從雲端讀取
                 const response = await fetch(`${GAS_URL}?action=get&userId=${state.userId}`);
                 const result = await response.json();
                 
                 if (result.status === 'success' && result.data) {
                     const d = result.data;
                     state.tokens = d.tokens || 0;
-                    state.username = d.username || "小學員";
                     state.unlockedItems = d.items || ['avatar_0', 'theme_default', 'sfx_default'];
                     state.currentAvatar = d.avatar || '👦';
                     state.currentTheme = d.theme || 'theme_default';
                     state.currentSfx = d.sfx || 'sfx_default';
                     updateSyncStatus('saved');
                 } else {
-                    // 新用戶或無資料，保持預設
                     console.log("New user or no remote data");
+                    // 如果是新用戶，嘗試讀取本地舊資料 (如果有的話)，否則重置
+                    loadLocalBackup();
                 }
             } catch (e) {
                 console.error("Sync error:", e);
-                // 發生錯誤，讀取本地暫存
                 loadLocalBackup();
                 updateSyncStatus('error');
-            } finally {
-                document.getElementById('loadingScreen').style.display = 'none';
             }
         } else {
-            loadLocalBackup(); // 無 URL，使用純本地模式
-            document.getElementById('loadingScreen').style.display = 'none';
+            loadLocalBackup();
         }
+        
+        if(showLoading) document.getElementById('loadingScreen').style.display = 'none';
         
         applyTheme(state.currentTheme);
         updateUI();
         setupAudio();
     }
 
+    // 登出提示
+    function showLogoutOption() {
+        showConfirm(`目前登入：${state.username}\n要登出切換使用者嗎？`, () => {
+            localStorage.removeItem('spellingGameUserName');
+            location.reload();
+        });
+    }
+
     function loadLocalBackup() {
-        const saved = localStorage.getItem('spellingGameDataV3');
+        // 嘗試從本地讀取該使用者的資料 (如果有的話)
+        // 注意：這裡使用帶有 userId 的 key 來區分不同使用者的本地資料
+        const saved = localStorage.getItem('spellingGameData_' + state.userId);
         if (saved) {
             const parsed = JSON.parse(saved);
             state.tokens = parsed.tokens || 0;
-            state.username = parsed.username || "小學員";
             state.unlockedItems = parsed.unlockedItems || ['avatar_0', 'theme_default', 'sfx_default'];
             state.currentAvatar = parsed.currentAvatar || '👦';
             state.currentTheme = parsed.currentTheme || 'theme_default';
             state.currentSfx = parsed.currentSfx || 'sfx_default';
+        } else {
+            // 完全新用戶，重置狀態
+            state.tokens = 0;
+            state.unlockedItems = ['avatar_0', 'theme_default', 'sfx_default'];
+            state.currentAvatar = '👦';
+            state.currentTheme = 'theme_default';
+            state.currentSfx = 'sfx_default';
         }
     }
 
     function saveData() {
-        // 先存本地備份
-        localStorage.setItem('spellingGameDataV3', JSON.stringify({
+        // 儲存到本地 (帶有 UserID)
+        localStorage.setItem('spellingGameData_' + state.userId, JSON.stringify({
             tokens: state.tokens,
             username: state.username,
             unlockedItems: state.unlockedItems,
@@ -716,8 +772,6 @@
         // 嘗試同步到雲端
         if (GAS_URL) {
             updateSyncStatus('saving');
-            // 使用 no-cors 模式發送 POST (無法讀取回應，但可送出資料)
-            // 為了讀取回應並確認成功，我們使用標準 POST，但 Apps Script 需正確設定
             const payload = {
                 userId: state.userId,
                 action: 'save',
@@ -729,11 +783,9 @@
                 sfx: state.currentSfx
             };
 
-            // 使用 navigator.sendBeacon (更可靠的背景傳送) 或 fetch
-            // 這裡使用 fetch
             fetch(GAS_URL, {
                 method: 'POST',
-                mode: 'no-cors', // 關鍵：允許跨域發送，但不讀取回應
+                mode: 'no-cors', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
@@ -760,6 +812,9 @@
         document.getElementById('storeTokens').innerText = state.tokens;
         document.getElementById('currentAvatar').innerText = state.currentAvatar;
         
+        // 顯示使用者名稱
+        document.getElementById('usernameDisplay').innerText = state.username;
+
         // 修改升級公式：每300分升一級
         const currentLevel = 1 + Math.floor(state.tokens / 300);
         const currentTitle = getTitle(currentLevel);
