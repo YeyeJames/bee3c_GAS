@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="拼字學堂">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <title>進階拼字學堂 - 雲端同步版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #ff758c; 
+            --bg-color: #f3f6f9;
+            --text-color: #2d3748;
+            --card-bg: #ffffff;
+            --font-main: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+        }
+
+        body.theme-forest { --primary-color: #43e97b; --secondary-color: #38f9d7; --bg-color: #e0f7fa; --text-color: #1a535c; }
+        body.theme-candy { --primary-color: #ff9a9e; --secondary-color: #fecfef; --bg-color: #fff0f5; --text-color: #553c4d; }
+        body.theme-dark { --primary-color: #4a5568; --secondary-color: #2d3748; --bg-color: #1a202c; --text-color: #e2e8f0; --card-bg: #2d3748; }
+
+        body {
+            font-family: var(--font-main);
+            background: linear-gradient(135deg, var(--bg-color) 0%, #e2e8f0 100%);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s ease;
+            font-size: 18px;
+            letter-spacing: 0.5px;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        header {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            color: white;
+            border-radius: 0 0 20px 20px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        
+        .avatar {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid rgba(255,255,255,0.6);
+            font-size: 28px;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        #userTitle { font-weight: 800; font-size: 1.2em; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        .stats-bar {
+            display: flex; gap: 15px; font-weight: bold;
+            background: rgba(255,255,255,0.25);
+            padding: 6px 15px; border-radius: 20px; font-size: 1em;
+            backdrop-filter: blur(5px);
+        }
+
+        .currency { color: #ffd700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+
+        .btn-store {
+            background: var(--accent-color);
+            border: none; padding: 8px 16px; border-radius: 20px;
+            color: white; font-weight: bold; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 10px rgba(255, 117, 140, 0.4);
+            font-size: 0.95em;
+        }
+        .btn-store:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(255, 117, 140, 0.4); }
+
+        main {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            padding: 15px; width: 100%; max-width: 900px; margin: 0 auto;
+            overflow: hidden; box-sizing: border-box;
+        }
+
+        .game-card {
+            background: var(--card-bg); width: 100%; height: 100%;
+            border-radius: 25px; padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center; position: relative;
+            display: flex; flex-direction: column;
+            overflow-y: auto; box-sizing: border-box;
+        }
+
+        #setupScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        #setupScreen h2 { font-size: 1.8em; margin-bottom: 1.5rem; color: var(--primary-color); }
+
+        .category-select {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 15px; margin-bottom: 25px; flex: 1;
+            max-height: 60vh; overflow-y: auto;
+        }
+        
+        .cat-btn {
+            padding: 20px; border: 2px solid rgba(102, 126, 234, 0.3);
+            background: #fff; border-radius: 18px; cursor: pointer;
+            font-size: 1.3em; font-weight: bold; color: var(--text-color);
+            transition: all 0.3s; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; min-height: 100px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        .cat-btn span { font-size: 0.7em; font-weight: normal; margin-top: 8px; opacity: 0.7; color: #718096; }
+        .cat-btn:hover, .cat-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-color: transparent; color: white; transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+        }
+        .cat-btn:hover span, .cat-btn.active span { color: rgba(255,255,255,0.9); }
+
+        .game-area { display: none; height: 100%; flex-direction: column; }
+        .game-area.active { display: flex; }
+
+        .btn-back {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
+            color: #718096; font-size: 0.95em; cursor: pointer; font-weight: bold;
+            z-index: 10; transition: all 0.2s; display: flex; align-items: center;
+            gap: 5px; padding: 8px 12px; border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .btn-back:hover { color: var(--primary-color); border-color: var(--primary-color); transform: translateX(-2px); }
+
+        .progress-hud {
+            display: flex; justify-content: space-between; margin-top: 40px;
+            margin-bottom: 10px; font-size: 1em; color: #718096;
+            flex-shrink: 0; font-weight: 600;
+        }
+
+        .timer { 
+            font-size: 1.5em; font-weight: 800; color: var(--primary-color); 
+            margin: 5px 0; flex-shrink: 0; font-feature-settings: "tnum"; letter-spacing: 1px;
+        }
+
+        .word-info-card {
+            background: #f8fafc; border-radius: 20px; padding: 15px 20px;
+            margin-top: auto; text-align: left;
+            border-top: 4px solid var(--primary-color);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.03); flex-shrink: 1;
+            overflow-y: auto; max-height: 35vh; font-size: 1em; line-height: 1.6;
+        }
+        .word-pos { color: #a0aec0; font-style: italic; font-size: 0.9em; margin-bottom: 4px; font-weight: 600; }
+        .word-meaning { font-size: 1.4em; font-weight: bold; color: var(--text-color); margin-bottom: 8px; letter-spacing: 0.5px; }
+        .word-definition { font-size: 1em; color: #4a5568; margin-bottom: 10px; line-height: 1.5; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;}
+        .word-sentence { 
+            background: #fff; padding: 12px; border-radius: 12px; 
+            font-size: 1.05em; color: #2d3748; border: 1px solid #e2e8f0; line-height: 1.6;
+        }
+        .word-sentence em {
+            color: var(--primary-color); font-style: normal; font-weight: 800;
+            background: rgba(102, 126, 234, 0.1); padding: 0 4px; border-radius: 4px; text-decoration: none;
+        }
+
+        .audio-controls {
+            display: flex; justify-content: center; gap: 15px; margin: 10px 0;
+            flex-wrap: wrap; flex-shrink: 0;
+        }
+
+        .btn-audio {
+            width: 60px; height: 60px; border-radius: 20px; border: none;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white; font-size: 26px; cursor: pointer;
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .btn-audio:active { transform: scale(0.92); box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3); }
+        .btn-audio.secondary { 
+            background: #e2e8f0; color: #4a5568; width: 45px; height: 45px; 
+            font-size: 20px; box-shadow: none; border-radius: 15px;
+        }
+        .btn-audio.secondary:hover { background: #cbd5e0; }
+        .btn-audio.text-btn { 
+            width: auto; height: 40px; padding: 0 16px; border-radius: 20px; 
+            font-size: 15px; background: white; color: var(--primary-color);
+            border: 2px solid var(--primary-color); box-shadow: none; font-weight: bold;
+        }
+        .btn-audio.text-btn:hover { background: var(--primary-color); color: white; }
+        
+        .recording-container {
+            background: #edf2f7; border-radius: 50px; padding: 6px 20px;
+            display: inline-flex; align-items: center; gap: 15px;
+            margin: 5px 0 15px 0; border: 1px solid #e2e8f0;
+            flex-shrink: 0; align-self: center;
+        }
+        .rec-status {
+            font-size: 0.95em; color: #718096; min-width: 70px;
+            text-align: left; font-weight: bold;
+        }
+        .rec-controls { display: flex; gap: 10px; }
+        .btn-rec, .btn-play {
+            width: 42px; height: 42px; border-radius: 50%; border: none;
+            cursor: pointer; font-size: 1.2em; display: flex;
+            justify-content: center; align-items: center; transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-rec { background: white; color: #ff6b6b; border: 2px solid #ff6b6b; }
+        .btn-rec:hover { background: #ff6b6b; color: white; }
+        .btn-rec.recording { background: #ff4b4b; color: white; animation: pulse 1.5s infinite; border-color: #ff4b4b; }
+        .btn-play { background: white; color: #43e97b; border: 2px solid #43e97b; }
+        .btn-play:hover { background: #43e97b; color: white; }
+        .btn-play:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); border-color: #cbd5e0; color: #cbd5e0; background: #edf2f7; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(255, 75, 75, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); } }
+
+        .input-box {
+            font-size: 2em; padding: 12px; width: 90%; max-width: 350px;
+            text-align: center; border: 3px solid #e2e8f0; border-radius: 15px;
+            letter-spacing: 3px; margin-bottom: 8px; text-transform: lowercase;
+            outline: none; flex-shrink: 0; align-self: center;
+            background: #fff; color: var(--text-color);
+            transition: border-color 0.3s, box-shadow 0.3s;
+            font-family: 'Nunito', sans-serif; font-weight: 700;
+        }
+        .input-box:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2); }
+        .input-box.correct { border-color: #43e97b; background-color: #f0fff4; color: #276749; }
+        .input-box.wrong { border-color: #ff6b6b; background-color: #fff5f5; color: #c53030; animation: shake 0.5s; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+        .controls { display: flex; justify-content: center; gap: 20px; margin-top: 25px; }
+        .toggle-switch {
+            display: flex; align-items: center; gap: 12px; font-size: 1.1em;
+            background: #fff; padding: 8px 16px; border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .toggle-switch input { width: 18px; height: 18px; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(45, 55, 72, 0.6); backdrop-filter: blur(4px);
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 25px;
+            width: 90%; max-width: 500px; max-height: 80vh;
+            overflow-y: auto; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+        .modal-content h2, .modal-content h3 { color: var(--text-color); }
+
+        .store-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 15px; margin-top: 20px;
+        }
+        .store-item {
+            border: 2px solid #e2e8f0; border-radius: 15px; padding: 12px;
+            cursor: pointer; transition: all 0.2s; background: #fff;
+        }
+        .store-item:hover { border-color: var(--primary-color); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .store-item.owned { border-color: #43e97b; background: #f0fff4; }
+        .store-item.locked { opacity: 0.6; filter: grayscale(1); background: #edf2f7; }
+        .price-tag { color: #d69e2e; font-weight: bold; display: block; margin-top: 8px; font-size: 1em; }
+
+        .combo-text {
+            position: absolute; top: 25px; right: 25px; font-size: 2em;
+            color: var(--accent-color); font-weight: 800; opacity: 0;
+            transform: scale(0.5); transition: all 0.3s; pointer-events: none;
+            text-shadow: 2px 2px 0px white, 4px 4px 10px rgba(0,0,0,0.2); z-index: 20;
+        }
+        .combo-text.show { opacity: 1; transform: scale(1.2) rotate(-10deg); }
+
+        .btn {
+            padding: 12px 30px; border-radius: 30px; border: none;
+            cursor: pointer; font-size: 1.1em; font-weight: bold;
+            background: linear-gradient(to right, var(--primary-color), #5a67d8);
+            color: white; margin-top: 10px; flex-shrink: 0; align-self: center;
+            box-shadow: 0 4px 12px rgba(90, 103, 216, 0.4); transition: all 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(90, 103, 216, 0.5); }
+        .btn:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(90, 103, 216, 0.4); }
+
+        /* Sync Status Icon */
+        #syncStatus {
+            position: fixed; bottom: 15px; right: 15px; 
+            background: rgba(255,255,255,0.8); padding: 5px 10px; 
+            border-radius: 15px; font-size: 0.8em; color: #718096;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); pointer-events: none;
+            display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity 0.3s;
+        }
+        #syncStatus.visible { opacity: 1; }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: white; z-index: 5000; display: flex;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--primary-color); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-height: 600px) {
+            header { padding: 8px 15px; }
+            .game-card { padding: 15px; }
+            .btn-audio { width: 45px; height: 45px; font-size: 20px; }
+            .word-info-card { max-height: 25vh; font-size: 0.9em; padding: 10px 15px; }
+            .input-box { margin-bottom: 5px; font-size: 1.6em; padding: 8px; }
+            .btn { padding: 8px 20px; font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <div style="color: #4a5568; font-weight: bold;">連線雲端資料庫...</div>
+</div>
+
+<header>
+    <div class="user-info">
+        <div class="avatar" id="currentAvatar">👦</div>
+        <div>
+            <div id="userTitle">初學新手</div>
+            <div style="font-size: 0.8em; opacity: 0.8;">等級 <span id="level">1</span></div>
+        </div>
+    </div>
+    
+    <div class="stats-bar">
+        <span>💰 <span id="tokens" class="currency">0</span></span>
+    </div>
+
+    <button class="btn-store" onclick="openStore()">🛒 商城</button>
+</header>
+
+<main>
+    <div class="game-card">
+        <div id="setupScreen">
+            <h2>📚 請選擇練習範圍</h2>
+            <div class="category-select" id="categoryList"></div>
+            
+            <div class="controls">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="randomMode"> 隨機順序
+                </label>
+            </div>
+            <button class="btn" style="width: 100%; max-width: 350px; font-size: 1.3em; margin-top:30px;" onclick="startGame()">開始練習 ▶</button>
+        </div>
+
+        <div id="gameArea" class="game-area">
+            <button class="btn-back" onclick="quitGame()">⬅ 返回列表</button>
+            
+            <div class="combo-text" id="comboDisplay">COMBO x2!</div>
+            
+            <div class="progress-hud">
+                <span>✅ 答對: <span id="scoreCorrect">0</span></span>
+                <span>❌ 答錯: <span id="scoreWrong">0</span></span>
+                <span>剩餘: <span id="wordsLeft">0</span></span>
+            </div>
+
+            <div class="timer" id="timerDisplay">00:00</div>
+
+            <div class="audio-controls">
+                <button class="btn-audio" onclick="playCurrentWord(0)" title="標準發音">🔊</button>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button class="btn-audio secondary" onclick="playCurrentWord(1)" title="慢速機器人">🤖</button>
+                    <button class="btn-audio secondary" onclick="playCurrentWord(2)" title="高音松鼠">🐿️</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                     <button class="btn-audio secondary" onclick="playCurrentWord(3)" title="低沉聲音">🦁</button>
+                     <button class="btn-audio text-btn" onclick="playSentence()" title="朗讀例句">🗣️ 唸例句</button>
+                </div>
+            </div>
+
+            <div class="recording-container">
+                <div class="rec-status" id="recStatus">錄音練習</div>
+                <div class="rec-controls">
+                    <button class="btn-rec" id="recordBtn" onclick="toggleRecording()" title="開始/停止錄音">🎤</button>
+                    <button class="btn-play" id="playRecordBtn" onclick="playUserRecording()" disabled title="播放錄音">▶️</button>
+                </div>
+            </div>
+
+            <input type="text" id="answerInput" class="input-box" placeholder="輸入單字..." autocomplete="off">
+            
+            <div id="feedback" style="height: 20px; color: #e53e3e; font-weight: bold; margin-bottom: 8px; font-size: 1em; flex-shrink: 0;"></div>
+
+            <button id="submitBtn" class="btn" onclick="checkAnswer()">送出答案 (Enter)</button>
+            <button id="nextBtn" class="btn" style="display:none; background: linear-gradient(to right, #48bb78, #38a169);" onclick="nextWord()">下一題 ▶</button>
+
+            <div class="word-info-card">
+                <div class="word-pos" id="displayPos"></div>
+                <div class="word-meaning" id="displayMeaning"></div>
+                <div class="word-definition" id="displayDef"></div>
+                <div class="word-sentence" id="displaySentence"></div>
+            </div>
+        </div>
+
+        <div id="resultScreen" style="display:none; flex:1; flex-direction:column; justify-content:center;">
+            <h2 style="font-size: 2.2em; color: var(--text-color);">🎉 練習完成！</h2>
+            <p style="font-size: 1.2em;">本次得分: <span id="finalScore" style="font-size:2.5em; color:var(--primary-color); font-weight:800;">0</span></p>
+            <p style="font-size: 1.1em; color: #718096;">耗時: <span id="finalTime" style="font-weight:bold;">00:00</span></p>
+            <p style="font-size: 1.2em;">獲得代幣: <span style="color:#d69e2e; font-weight:bold;">+<span id="earnedTokens">0</span> 💰</span></p>
+            <div id="wrongWordsArea" style="text-align:left; margin-top:25px; display:none; max-height: 30vh; overflow-y: auto; background: #fff; padding: 15px; border-radius: 15px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);">
+                <h4 style="color:#e53e3e; margin-top:0;">需加強的單字：</h4>
+                <ul id="wrongWordsList" style="padding-left: 20px; color: #4a5568;"></ul>
+                <button class="btn" style="background: linear-gradient(to right, #f56565, #e53e3e); margin-top: 15px; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.4);" onclick="retryWrong()">錯題重練</button>
+            </div>
+            <button class="btn" style="margin-top: 20px;" onclick="location.reload()">回到首頁</button>
+        </div>
+    </div>
+</main>
+
+<div id="syncStatus">☁️ 已同步</div>
+
+<!-- 商城 Modal -->
+<div id="storeModal" class="modal">
+    <div class="modal-content">
+        <h2>🛍️ 學習商城</h2>
+        <p style="font-size: 1.2em;">目前持有: <span id="storeTokens" class="currency">0</span> 💰</p>
+        
+        <h3 style="margin-top: 20px; text-align: left; border-bottom: 2px solid #edf2f7; padding-bottom: 5px;">👤 頭像</h3>
+        <div class="store-grid" id="avatarStore"></div>
+
+        <h3 style="margin-top: 20px; text-align: left; border-bottom: 2px solid #edf2f7; padding-bottom: 5px;">🎨 主題</h3>
+        <div class="store-grid" id="themeStore"></div>
+
+        <h3 style="margin-top: 20px; text-align: left; border-bottom: 2px solid #edf2f7; padding-bottom: 5px;">🔊 音效包</h3>
+        <div class="store-grid" id="sfxStore"></div>
+
+        <button class="btn" style="margin-top:25px; background: #a0aec0; box-shadow: none;" onclick="document.getElementById('storeModal').classList.remove('active')">關閉</button>
+    </div>
+</div>
+
+<!-- 通用訊息/確認彈窗 -->
+<div id="msgModal" class="modal" style="z-index: 2000;">
+    <div class="modal-content" style="max-width: 380px;">
+        <h3 id="msgTitle" style="font-size: 1.5em; margin-bottom: 10px;">提示</h3>
+        <p id="msgContent" style="margin: 15px 0; font-size: 1.2em; color: #4a5568; line-height: 1.5;"></p>
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+            <button id="msgCancelBtn" class="btn" style="background: #cbd5e0; color: #4a5568; display:none; box-shadow: none;">取消</button>
+            <button id="msgOkBtn" class="btn">確定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ******************************************************
+    // 重要：請在此貼上您的 Google Apps Script 網頁應用程式網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby98J3n-Nz2F1HQQDb7hw8VheYC-SnitjlUFVO8k2VT4kayjFsT9wLYNHAAGUT1yMeS/exec"; 
+    // ******************************************************
+
+    // --- 自製彈窗系統 ---
+    let msgCallback = null;
+
+    function closeMsgModal() {
+        document.getElementById('msgModal').classList.remove('active');
+        document.getElementById('msgCancelBtn').style.display = 'none';
+        msgCallback = null;
+    }
+
+    function showAlert(msg) {
+        document.getElementById('msgTitle').innerText = "提示";
+        document.getElementById('msgContent').innerText = msg;
+        document.getElementById('msgOkBtn').onclick = closeMsgModal;
+        document.getElementById('msgModal').classList.add('active');
+    }
+
+    function showConfirm(msg, onYes) {
+        document.getElementById('msgTitle').innerText = "確認";
+        document.getElementById('msgContent').innerText = msg;
+        document.getElementById('msgCancelBtn').style.display = 'inline-block';
+        
+        document.getElementById('msgCancelBtn').onclick = closeMsgModal;
+        document.getElementById('msgOkBtn').onclick = () => {
+            closeMsgModal();
+            if(onYes) onYes();
+        };
+        
+        document.getElementById('msgModal').classList.add('active');
+    }
+
+    function updateSyncStatus(status) {
+        const el = document.getElementById('syncStatus');
+        if (status === 'saving') {
+            el.innerText = "⏳ 同步中...";
+            el.classList.add('visible');
+        } else if (status === 'saved') {
+            el.innerText = "☁️ 已同步";
+            el.classList.add('visible');
+            setTimeout(() => el.classList.remove('visible'), 2000);
+        } else if (status === 'error') {
+            el.innerText = "⚠️ 同步失敗 (離線模式)";
+            el.style.color = "red";
+            el.classList.add('visible');
+        }
+    }
+
+    // --- 資料庫 (100單字詳細資料) ---
+    const wordBanks = {
+        part1: { title: "Part 1", desc: "單字 1-25", data: [
+            { word: "accompany", pos: "(v.)", meaning: "陪伴；伴隨", enDef: "To go somewhere with someone.", sentence: "I will accompany my grandmother to the doctor tomorrow.", cnSentence: "我明天會陪祖母去看醫生。" },
+            { word: "alder", pos: "(n.)", meaning: "榿木", enDef: "A type of tree that often grows near water.", sentence: "The bird built a small nest in the tall alder tree.", cnSentence: "那隻鳥在那棵高大的榿木上築了一個小巢。" },
+            { word: "adventure", pos: "(n.)", meaning: "冒險", enDef: "An exciting and sometimes dangerous experience.", sentence: "Life is full of surprises and adventures if you are brave enough.", cnSentence: "如果你夠勇敢，生活中充滿了驚喜與冒險。" },
+            { word: "amphibian", pos: "(n.)", meaning: "兩棲動物", enDef: "An animal (like a frog) that can live both on land and in water.", sentence: "Frogs are the most common type of amphibian found in this area.", cnSentence: "青蛙是這個地區最常見的兩棲動物。" },
+            { word: "ancient", pos: "(adj.)", meaning: "古代的；古老的", enDef: "Very old; from a long time ago.", sentence: "We visited the ancient ruins in Rome during our summer vacation.", cnSentence: "我們在暑假期間參觀了羅馬的古代遺跡。" },
+            { word: "appeal", pos: "(v./n.)", meaning: "吸引；呼籲", enDef: "To be interesting or attractive to someone.", sentence: "The idea of camping in the rain doesn't appeal to me at all.", cnSentence: "在雨中露營的想法對我一點吸引力都沒有。" },
+            { word: "appoint", pos: "(v.)", meaning: "指派；任命", enDef: "To choose someone for a job or position.", sentence: "The teacher decided to appoint John as the class leader.", cnSentence: "老師決定指派約翰擔任班長。" },
+            { word: "arithmetic", pos: "(n.)", meaning: "算術", enDef: "The math of adding, subtracting, multiplying, and dividing numbers.", sentence: "Mental arithmetic is a very useful skill for shopping.", cnSentence: "心算對於購物來說是一項很有用的技能。" },
+            { word: "arrangement", pos: "(n.)", meaning: "安排；佈置", enDef: "The way things are organized or placed.", sentence: "The flower arrangement on the table looks absolutely beautiful.", cnSentence: "桌上的花藝佈置看起來美極了。" },
+            { word: "atop", pos: "(prep.)", meaning: "在...頂上", enDef: "On the top of something.", sentence: "The cat sat atop the wall, watching the birds fly by.", cnSentence: "貓咪坐在牆頭上，看著鳥兒飛過。" },
+            { word: "automobile", pos: "(n.)", meaning: "汽車", enDef: "A car.", sentence: "The invention of the automobile changed how people travel.", cnSentence: "汽車的發明改變了人們旅行的方式。" },
+            { word: "awaken", pos: "(v.)", meaning: "喚醒；醒來", enDef: "To wake someone up.", sentence: "Please be quiet, or you might awaken the sleeping baby.", cnSentence: "請安靜，否則你可能會吵醒睡著的嬰兒。" },
+            { word: "barnacle", pos: "(n.)", meaning: "藤壺", enDef: "A small sea animal with a hard shell that sticks to rocks and ships.", sentence: "Many barnacles were attached to the bottom of the old boat.", cnSentence: "許多藤壺附著在那艘舊船的底部。" },
+            { word: "beneficial", pos: "(adj.)", meaning: "有益的", enDef: "Helpful or good for you.", sentence: "Eating plenty of vegetables is beneficial to your health.", cnSentence: "多吃蔬菜對你的健康有益。" },
+            { word: "bewilder", pos: "(v.)", meaning: "使迷惑", enDef: "To confuse someone very much.", sentence: "The complicated map completely bewildered the tourists.", cnSentence: "這張複雜的地圖讓遊客們完全搞糊塗了。" },
+            { word: "bulletin", pos: "(n.)", meaning: "公告；快報", enDef: "A short official statement or news report.", sentence: "Check the school bulletin board for the exam schedule.", cnSentence: "請查看學校佈告欄上的考試時間表。" },
+            { word: "calories", pos: "(n.)", meaning: "卡路里", enDef: "Units used to measure the energy in food.", sentence: "She counts calories carefully because she wants to stay healthy.", cnSentence: "她仔細計算卡路里，因為她想保持健康。" },
+            { word: "cattle", pos: "(n.)", meaning: "牛群", enDef: "Cows and bulls kept on a farm.", sentence: "The farmer raises cattle for both milk and meat.", cnSentence: "那位農夫飼養牛群以獲取牛奶和牛肉。" },
+            { word: "central", pos: "(adj.)", meaning: "中央的", enDef: "In the middle of something.", sentence: "The park is located in the central part of the city.", cnSentence: "這座公園位於城市的中心地帶。" },
+            { word: "citizen", pos: "(n.)", meaning: "公民", enDef: "A person who is a member of a country.", sentence: "Every citizen has the right to vote in the election.", cnSentence: "每位公民都有權利在選舉中投票。" },
+            { word: "compel", pos: "(v.)", meaning: "強迫", enDef: "To force someone to do something.", sentence: "The heavy rain compelled us to cancel the picnic and stay indoors.", cnSentence: "大雨迫使我們取消野餐並待在室內。" },
+            { word: "conclude", pos: "(v.)", meaning: "下結論；結束", enDef: "To end a speech, meeting, or piece of writing.", sentence: "The principal concluded his speech with a famous quote.", cnSentence: "校長引用一句名言結束了他的演講。" },
+            { word: "condor", pos: "(n.)", meaning: "禿鷹；神鷹", enDef: "A very large bird that eats dead animals.", sentence: "We were lucky enough to see a giant condor flying over the mountains.", cnSentence: "我們很幸運地看到一隻巨大的禿鷹飛越山頭。" },
+            { word: "consist", pos: "(v.)", meaning: "組成", enDef: "To be made of particular parts or things.", sentence: "A soccer team usually consists of eleven players.", cnSentence: "一支足球隊通常由十一名球員組成。" },
+            { word: "contract", pos: "(n.)", meaning: "合約；(v.) 收縮", enDef: "An official written agreement.", sentence: "My dad signed a two-year contract for his new job.", cnSentence: "我爸爸為他的新工作簽了一份兩年的合約。" }
+        ]},
+        part2: { title: "Part 2", desc: "單字 26-50", data: [
+            { word: "courtroom", pos: "(n.)", meaning: "法庭", enDef: "A room where legal cases are judged.", sentence: "Everyone stood up when the judge entered the courtroom.", cnSentence: "當法官進入法庭時，每個人都站了起來。" },
+            { word: "current", pos: "(adj.)", meaning: "目前的", enDef: "Happening or existing now.", sentence: "The current situation is difficult, but we will solve it.", cnSentence: "目前的情況很困難，但我們會解決它的。" },
+            { word: "decorate", pos: "(v.)", meaning: "裝飾", enDef: "To make something look nicer by adding things to it.", sentence: "Let's decorate the living room with balloons for the party.", cnSentence: "我們用氣球來裝飾客廳舉辦派對吧。" },
+            { word: "diary", pos: "(n.)", meaning: "日記", enDef: "A book in which you write down your daily thoughts and experiences.", sentence: "Keeping a diary helps me remember special moments in my life.", cnSentence: "寫日記幫助我記住生命中的特殊時刻。" },
+            { word: "double", pos: "(adj.)", meaning: "雙倍的", enDef: "Twice as big or twice as much.", sentence: "I ordered a double cheeseburger because I was very hungry.", cnSentence: "我點了一個雙層起司漢堡，因為我非常餓。" },
+            { word: "effect", pos: "(n.)", meaning: "影響；效果", enDef: "A change that is caused by something.", sentence: "Air pollution has a serious negative effect on the environment.", cnSentence: "空氣污染對環境有嚴重的負面影響。" },
+            { word: "entire", pos: "(adj.)", meaning: "整個的", enDef: "Whole or complete.", sentence: "He was so hungry that he ate the entire pizza by himself.", cnSentence: "他餓到自己一個人吃掉了整個披薩。" },
+            { word: "entrance", pos: "(n.)", meaning: "入口", enDef: "A door or gate used to go into a place.", sentence: "The main entrance to the museum is around the corner.", cnSentence: "博物館的正門在轉角處。" },
+            { word: "exist", pos: "(v.)", meaning: "存在", enDef: "To be real or present.", sentence: "Do you believe that aliens really exist in the universe?", cnSentence: "你相信宇宙中真的存在外星人嗎？" },
+            { word: "expense", pos: "(n.)", meaning: "花費；開支", enDef: "Money that you spend on something.", sentence: "Buying a new house is a huge expense for most families.", cnSentence: "對大多數家庭來說，買新房是一筆巨大的開銷。" },
+            { word: "experiment", pos: "(n.)", meaning: "實驗", enDef: "A scientific test to learn something new.", sentence: "The science experiment showed how water turns into ice.", cnSentence: "這個科學實驗展示了水如何變成冰。" },
+            { word: "falter", pos: "(v.)", meaning: "猶豫；動搖", enDef: "To become weak or unsure.", sentence: "His voice faltered when he had to tell the sad news.", cnSentence: "當他必須說出這個悲傷的消息時，他的聲音顫抖了。" },
+            { word: "faraway", pos: "(adj.)", meaning: "遙遠的", enDef: "A long distance away.", sentence: "She dreams of traveling to faraway lands and meeting new people.", cnSentence: "她夢想著去遙遠的國度旅行並結識新朋友。" },
+            { word: "fitness", pos: "(n.)", meaning: "健康；體能", enDef: "The condition of being physically strong and healthy.", sentence: "Regular exercise is essential for physical fitness.", cnSentence: "規律運動對於身體健康是不可或缺的。" },
+            { word: "fashion", pos: "(n.)", meaning: "時尚；流行", enDef: "A popular style of clothes, hair, etc.", sentence: "Blue jeans never seem to go out of fashion.", cnSentence: "藍色牛仔褲似乎永遠不會退流行。" },
+            { word: "forever", pos: "(adv.)", meaning: "永遠", enDef: "For all time.", sentence: "I will remember this wonderful trip forever.", cnSentence: "我將永遠記得這趟美好的旅程。" },
+            { word: "footstep", pos: "(n.)", meaning: "腳步聲", enDef: "The sound of a person walking.", sentence: "I heard heavy footsteps coming down the hallway.", cnSentence: "我聽到沉重的腳步聲從走廊傳來。" },
+            { word: "furniture", pos: "(n.)", meaning: "傢俱", enDef: "Large objects like tables, chairs, and beds used in a room.", sentence: "We need to buy some new furniture for our new apartment.", cnSentence: "我們需要為新公寓買一些新傢俱。" },
+            { word: "glacier", pos: "(n.)", meaning: "冰河", enDef: "A large mass of ice that moves slowly.", sentence: "Global warming is causing glaciers to melt rapidly.", cnSentence: "全球暖化正導致冰河迅速融化。" },
+            { word: "glance", pos: "(v.)", meaning: "瞥一眼", enDef: "To look quickly at something.", sentence: "He glanced at his watch and realized he was late for school.", cnSentence: "他瞥了一眼手錶，發現上學要遲到了。" },
+            { word: "gloom", pos: "(n.)", meaning: "憂鬱；陰暗", enDef: "A feeling of sadness or a dark and dim state.", sentence: "The gloom of the rainy afternoon made everyone feel sleepy.", cnSentence: "下雨午後的陰沉讓每個人都覺得想睡。" },
+            { word: "greenery", pos: "(n.)", meaning: "綠色植物", enDef: "Green plants or leaves.", sentence: "The park is full of lush greenery and colorful flowers.", cnSentence: "公園裡充滿了茂盛的綠色植物和色彩繽紛的花朵。" },
+            { word: "gross", pos: "(adj.)", meaning: "噁心的", enDef: "Very unpleasant or disgusting.", sentence: "\"Eww, that dead bug is gross!\" shouted the little boy.", cnSentence: "「噁，那隻死蟲好噁心！」小男孩大叫道。" },
+            { word: "hectic", pos: "(adj.)", meaning: "忙亂的", enDef: "Very busy and fast.", sentence: "Life in a big city can be very hectic and stressful.", cnSentence: "大城市的生活可能會非常忙亂且充滿壓力。" },
+            { word: "hence", pos: "(adv.)", meaning: "因此", enDef: "For this reason.", sentence: "It is raining heavily; hence, the soccer game is canceled.", cnSentence: "雨下得很大，因此足球賽取消了。" }
+        ]},
+        part3: { title: "Part 3", desc: "單字 51-75", data: [
+            { word: "herald", pos: "(v.)", meaning: "預示", enDef: "To be a sign that something is going to happen.", sentence: "The arrival of the cuckoo bird often heralds the start of spring.", cnSentence: "杜鵑鳥的到來通常預示著春天的開始。" },
+            { word: "hockey", pos: "(n.)", meaning: "曲棍球", enDef: "A sport played on ice or a field with sticks and a puck/ball.", sentence: "Ice hockey is a very popular sport in Canada.", cnSentence: "冰上曲棍球在加拿大是非常受歡迎的運動。" },
+            { word: "housekeeper", pos: "(n.)", meaning: "管家", enDef: "A person paid to clean and look after a house.", sentence: "The housekeeper ensures that all the rooms in the hotel are clean.", cnSentence: "房務管家確保飯店裡所有的房間都是乾淨的。" },
+            { word: "ideal", pos: "(adj.)", meaning: "理想的", enDef: "Perfect; the best possible.", sentence: "A sunny day with a light breeze is ideal for a picnic.", cnSentence: "陽光普照且有微風的日子是野餐的理想天氣。" },
+            { word: "increase", pos: "(v./n.)", meaning: "增加", enDef: "To become larger or greater in amount.", sentence: "The price of vegetables tends to increase after a typhoon.", cnSentence: "颱風過後蔬菜價格往往會上漲。" },
+            { word: "individual", pos: "(n.)", meaning: "個人", enDef: "A single person or thing.", sentence: "Each individual has a unique fingerprint.", cnSentence: "每個人都有獨一無二的指紋。" },
+            { word: "instant", pos: "(adj.)", meaning: "立即的", enDef: "Happening immediately.", sentence: "I sent him a message and got an instant reply.", cnSentence: "我傳訊息給他，並得到了立即的回覆。" },
+            { word: "ivory", pos: "(n.)", meaning: "象牙", enDef: "The hard white substance from elephant tusks.", sentence: "Trading ivory is illegal in many countries to protect elephants.", cnSentence: "為了保護大象，在許多國家買賣象牙是非法的。" },
+            { word: "journey", pos: "(n.)", meaning: "旅程", enDef: "A long trip from one place to another.", sentence: "The journey to the top of the mountain took us five hours.", cnSentence: "前往山頂的旅程花了我們五個小時。" },
+            { word: "justice", pos: "(n.)", meaning: "正義", enDef: "Fairness; right behavior.", sentence: "Superheroes in movies always fight for justice.", cnSentence: "電影裡的超級英雄總是為了正義而戰。" },
+            { word: "league", pos: "(n.)", meaning: "聯盟", enDef: "A group of sports teams that play against each other.", sentence: "My brother plays baseball in the local junior league.", cnSentence: "我哥哥在當地的少年聯盟打棒球。" },
+            { word: "liquid", pos: "(n.)", meaning: "液體", enDef: "A substance like water that flows freely.", sentence: "Water becomes a solid when it freezes and a liquid when it melts.", cnSentence: "水結冰時變成固體，融化時變成液體。" },
+            { word: "livestock", pos: "(n.)", meaning: "家畜", enDef: "Animals kept on a farm, like cows and sheep.", sentence: "The farm has a lot of livestock, such as cows, sheep, and pigs.", cnSentence: "這個農場有很多家畜，例如牛、羊和豬。" },
+            { word: "major", pos: "(adj.)", meaning: "主要的；重大的", enDef: "Very large, important, or serious.", sentence: "Pollution is a major problem that we need to solve.", cnSentence: "污染是我們需要解決的一個主要問題。" },
+            { word: "memory", pos: "(n.)", meaning: "記憶", enDef: "Something that you remember.", sentence: "I have a fond memory of baking cookies with my mom.", cnSentence: "我有個跟媽媽一起烤餅乾的美好回憶。" },
+            { word: "mere", pos: "(adj.)", meaning: "僅僅", enDef: "Only; used to emphasize how small something is.", sentence: "It took a mere five minutes to fix the toy.", cnSentence: "修好這個玩具僅僅花了五分鐘。" },
+            { word: "niece", pos: "(n.)", meaning: "姪女；外甥女", enDef: "The daughter of your brother or sister.", sentence: "My sister's daughter is my niece.", cnSentence: "我姐姐的女兒是我的外甥女。" },
+            { word: "notify", pos: "(v.)", meaning: "通知", enDef: "To tell someone officially about something.", sentence: "Please notify the teacher if you are going to be late.", cnSentence: "如果你會遲到，請通知老師。" },
+            { word: "obey", pos: "(v.)", meaning: "服從", enDef: "To do what a rule or person says.", sentence: "Drivers must obey traffic rules to avoid accidents.", cnSentence: "駕駛必須遵守交通規則以避免意外。" },
+            { word: "onward", pos: "(adv.)", meaning: "向前", enDef: "Moving forward.", sentence: "Despite the rain, the hikers continued onward.", cnSentence: "儘管下著雨，登山客們仍繼續向前行。" },
+            { word: "opinion", pos: "(n.)", meaning: "意見", enDef: "What you think about something.", sentence: "In my opinion, chocolate ice cream is the best flavor.", cnSentence: "依我看（依我的意見），巧克力冰淇淋是最好吃的口味。" },
+            { word: "oppose", pos: "(v.)", meaning: "反對", enDef: "To disagree with something or try to stop it.", sentence: "Many people oppose the plan to build a factory near the park.", cnSentence: "許多人反對在公園附近蓋工廠的計畫。" },
+            { word: "original", pos: "(adj.)", meaning: "最初的", enDef: "Existing at the beginning.", sentence: "The original plan was better than the new one.", cnSentence: "最初的計畫比新的這個好。" },
+            { word: "pattern", pos: "(n.)", meaning: "圖案", enDef: "A repeated design or arrangement.", sentence: "I really like the floral pattern on your dress.", cnSentence: "我真的很喜歡你洋裝上的花朵圖案。" },
+            { word: "personal", pos: "(adj.)", meaning: "個人的；私人的", enDef: "Belonging to one person; not public.", sentence: "Please don't ask personal questions to people you just met.", cnSentence: "請不要問剛認識的人私人問題。" }
+        ]},
+        part4: { title: "Part 4", desc: "單字 76-100", data: [
+            { word: "pleasant", pos: "(adj.)", meaning: "令人愉快的", enDef: "Nice, enjoyable, or friendly.", sentence: "We had a pleasant walk in the park this morning.", cnSentence: "我們今天早上在公園裡愉快地散步。" },
+            { word: "polar", pos: "(adj.)", meaning: "極地的", enDef: "Related to the North or South Pole.", sentence: "Polar bears have thick fur to keep them warm in the cold.", cnSentence: "北極熊有厚厚的毛皮讓牠們在寒冷中保暖。" },
+            { word: "reserve", pos: "(v.)", meaning: "預定", enDef: "To book something to be used later.", sentence: "I need to call the restaurant to reserve a table for dinner.", cnSentence: "我需要打電話給餐廳預訂晚餐的位子。" },
+            { word: "rinse", pos: "(v.)", meaning: "沖洗", enDef: "To wash something with clean water.", sentence: "Remember to rinse the apple with water before you eat it.", cnSentence: "吃蘋果之前記得用水沖洗一下。" },
+            { word: "rustle", pos: "(v./n.)", meaning: "發出沙沙聲", enDef: "To make a soft sound like dry leaves moving.", sentence: "The dry leaves rustled in the wind.", cnSentence: "乾燥的葉子在風中發出沙沙聲。" },
+            { word: "salary", pos: "(n.)", meaning: "薪水", enDef: "Money paid to employees for their work.", sentence: "He is happy with his new job because the salary is good.", cnSentence: "他對新工作很滿意，因為薪水很不錯。" },
+            { word: "society", pos: "(n.)", meaning: "社會", enDef: "People living together in a community.", sentence: "We all have a responsibility to help the poor in our society.", cnSentence: "我們都有責任幫助社會中的窮人。" },
+            { word: "standard", pos: "(n./adj.)", meaning: "標準", enDef: "A level of quality that is accepted as normal.", sentence: "This car meets all the safety standards.", cnSentence: "這輛車符合所有的安全標準。" },
+            { word: "surround", pos: "(v.)", meaning: "包圍", enDef: "To be all around something.", sentence: "Tall mountains surround the small village.", cnSentence: "高山環繞著這個小村莊。" },
+            { word: "sweater", pos: "(n.)", meaning: "毛衣", enDef: "A warm piece of clothing usually made of wool.", sentence: "Put on a sweater if you feel cold outside.", cnSentence: "如果你在外面覺得冷，就穿上毛衣。" },
+            { word: "terrify", pos: "(v.)", meaning: "使恐懼", enDef: "To scare someone very much.", sentence: "Spiders terrify my little sister; she screams whenever she sees one.", cnSentence: "蜘蛛讓我妹妹很害怕；只要看到一隻她就會尖叫。" },
+            { word: "territory", pos: "(n.)", meaning: "領土；地盤", enDef: "An area of land that belongs to a person or animal.", sentence: "Wolves mark their territory to keep other animals away.", cnSentence: "狼群會標記牠們的地盤以防止其他動物靠近。" },
+            { word: "theater", pos: "(n.)", meaning: "劇院", enDef: "A building where movies or plays are shown.", sentence: "We went to the theater to watch the latest movie.", cnSentence: "我們去電影院看最新的電影。" },
+            { word: "tongue", pos: "(n.)", meaning: "舌頭", enDef: "The soft part inside the mouth used for tasting and speaking.", sentence: "The doctor asked the patient to stick out his tongue.", cnSentence: "醫生請病人伸出舌頭。" },
+            { word: "tremble", pos: "(v.)", meaning: "顫抖", enDef: "To shake slightly because of cold or fear.", sentence: "She began to tremble with cold after waiting in the snow.", cnSentence: "在雪中等待後，她冷得開始發抖。" },
+            { word: "unlimited", pos: "(adj.)", meaning: "無限的", enDef: "Without any limit or end.", sentence: "This phone plan offers unlimited data usage.", cnSentence: "這個電話方案提供無限的數據流量。" },
+            { word: "unusual", pos: "(adj.)", meaning: "不尋常的", enDef: "Different from what is normal or expected.", sentence: "It is unusual for him to be late; he is usually on time.", cnSentence: "他遲到很不尋常；他通常都很準時。" },
+            { word: "urchin", pos: "(n.)", meaning: "海膽；頑童", enDef: "A sea animal with spines; or a naughty child.", sentence: "Be careful not to step on a sea urchin when walking in the water.", cnSentence: "在水中行走時要小心不要踩到海膽。" },
+            { word: "veil", pos: "(n.)", meaning: "面紗", enDef: "A thin piece of cloth used to cover the face.", sentence: "The bride lifted her veil to smile at the groom.", cnSentence: "新娘掀起面紗對新郎微笑。" },
+            { word: "vulture", pos: "(n.)", meaning: "禿鷲", enDef: "A large bird that eats dead animals.", sentence: "Vultures circled in the sky, looking for food on the ground.", cnSentence: "禿鷲在空中盤旋，尋找地面上的食物。" },
+            { word: "weakness", pos: "(n.)", meaning: "缺點；弱點", enDef: "A fault or lack of strength.", sentence: "Superman's only weakness is Kryptonite.", cnSentence: "超人唯一的弱點是氪星石。" },
+            { word: "weasel", pos: "(n.)", meaning: "鼬鼠", enDef: "A small, thin mammal that eats small animals.", sentence: "A weasel is a small, quick animal with a long body.", cnSentence: "鼬鼠是一種身體長長、動作敏捷的小動物。" },
+            { word: "witness", pos: "(n.)", meaning: "目擊者；(v.) 目擊", enDef: "A person who sees an event happen.", sentence: "The police are looking for a witness to the car accident.", cnSentence: "警方正在尋找這場車禍的目擊者。" },
+            { word: "worthless", pos: "(adj.)", meaning: "沒價值的", enDef: "Having no value or use.", sentence: "Without the key, this old treasure chest is worthless.", cnSentence: "沒有鑰匙，這個舊寶箱就沒有價值了。" },
+            { word: "wrinkle", pos: "(n.)", meaning: "皺紋", enDef: "A small line on the skin caused by age.", sentence: "My grandmother has wrinkles around her eyes when she smiles.", cnSentence: "我祖母笑的時候眼睛周圍會有皺紋。" }
+        ]}
+    };
+
+    // --- 2. 遊戲狀態 ---
+    let state = {
+        tokens: 0,
+        username: "小學員",
+        userId: null,
+        unlockedItems: ['avatar_0', 'theme_default', 'sfx_default'],
+        currentAvatar: '👦',
+        currentTheme: 'theme_default',
+        currentSfx: 'sfx_default',
+        
+        currentWords: [], currentIndex: 0, correctCount: 0, wrongCount: 0,
+        startTime: null, timerInterval: null, wrongWords: [], combo: 0,
+        userRecordings: {}, mediaRecorder: null, audioChunks: [], isRecording: false
+    };
+
+    // --- 3. 初始化與雲端同步 ---
+    async function init() {
+        renderCategories();
+        // 檢查是否有本地 UserID，若無則生成
+        let storedId = localStorage.getItem('spellingGameUserId');
+        if (!storedId) {
+            storedId = 'user_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('spellingGameUserId', storedId);
+        }
+        state.userId = storedId;
+
+        if (GAS_URL) {
+            document.getElementById('loadingScreen').style.display = 'flex';
+            try {
+                // 嘗試從雲端讀取
+                const response = await fetch(`${GAS_URL}?action=get&userId=${state.userId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success' && result.data) {
+                    const d = result.data;
+                    state.tokens = d.tokens || 0;
+                    state.username = d.username || "小學員";
+                    state.unlockedItems = d.items || ['avatar_0', 'theme_default', 'sfx_default'];
+                    state.currentAvatar = d.avatar || '👦';
+                    state.currentTheme = d.theme || 'theme_default';
+                    state.currentSfx = d.sfx || 'sfx_default';
+                    updateSyncStatus('saved');
+                } else {
+                    // 新用戶或無資料，保持預設
+                    console.log("New user or no remote data");
+                }
+            } catch (e) {
+                console.error("Sync error:", e);
+                // 發生錯誤，讀取本地暫存
+                loadLocalBackup();
+                updateSyncStatus('error');
+            } finally {
+                document.getElementById('loadingScreen').style.display = 'none';
+            }
+        } else {
+            loadLocalBackup(); // 無 URL，使用純本地模式
+            document.getElementById('loadingScreen').style.display = 'none';
+        }
+        
+        applyTheme(state.currentTheme);
+        updateUI();
+        setupAudio();
+    }
+
+    function loadLocalBackup() {
+        const saved = localStorage.getItem('spellingGameDataV3');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            state.tokens = parsed.tokens || 0;
+            state.username = parsed.username || "小學員";
+            state.unlockedItems = parsed.unlockedItems || ['avatar_0', 'theme_default', 'sfx_default'];
+            state.currentAvatar = parsed.currentAvatar || '👦';
+            state.currentTheme = parsed.currentTheme || 'theme_default';
+            state.currentSfx = parsed.currentSfx || 'sfx_default';
+        }
+    }
+
+    function saveData() {
+        // 先存本地備份
+        localStorage.setItem('spellingGameDataV3', JSON.stringify({
+            tokens: state.tokens,
+            username: state.username,
+            unlockedItems: state.unlockedItems,
+            currentAvatar: state.currentAvatar,
+            currentTheme: state.currentTheme,
+            currentSfx: state.currentSfx
+        }));
+        
+        updateUI();
+
+        // 嘗試同步到雲端
+        if (GAS_URL) {
+            updateSyncStatus('saving');
+            // 使用 no-cors 模式發送 POST (無法讀取回應，但可送出資料)
+            // 為了讀取回應並確認成功，我們使用標準 POST，但 Apps Script 需正確設定
+            const payload = {
+                userId: state.userId,
+                action: 'save',
+                tokens: state.tokens,
+                username: state.username,
+                items: state.unlockedItems,
+                avatar: state.currentAvatar,
+                theme: state.currentTheme,
+                sfx: state.currentSfx
+            };
+
+            // 使用 navigator.sendBeacon (更可靠的背景傳送) 或 fetch
+            // 這裡使用 fetch
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors', // 關鍵：允許跨域發送，但不讀取回應
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                updateSyncStatus('saved');
+            }).catch(e => {
+                console.error("Save error:", e);
+                updateSyncStatus('error');
+            });
+        }
+    }
+
+    // 稱號邏輯
+    function getTitle(level) {
+        if (level >= 100) return "傳奇王者";
+        if (level >= 80) return "英語博學士";
+        if (level >= 60) return "單字達人";
+        if (level >= 40) return "拼字好手";
+        if (level >= 20) return "潛力新星";
+        return "初學新手";
+    }
+
+    function updateUI() {
+        document.getElementById('tokens').innerText = state.tokens;
+        document.getElementById('storeTokens').innerText = state.tokens;
+        document.getElementById('currentAvatar').innerText = state.currentAvatar;
+        
+        // 修改升級公式：每300分升一級
+        const currentLevel = 1 + Math.floor(state.tokens / 300);
+        const currentTitle = getTitle(currentLevel);
+        
+        document.getElementById('level').innerText = currentLevel;
+        document.getElementById('userTitle').innerText = currentTitle;
+    }
+
+    function renderCategories() {
+        const container = document.getElementById('categoryList');
+        container.innerHTML = '';
+        for (const [key, data] of Object.entries(wordBanks)) {
+            const btn = document.createElement('button');
+            btn.className = 'cat-btn';
+            btn.innerHTML = `${data.title}<span>${data.desc}</span>`;
+            btn.onclick = () => selectCategory(btn, key);
+            container.appendChild(btn);
+        }
+    }
+
+    let selectedCategory = null;
+    function selectCategory(btn, key) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedCategory = key;
+    }
+
+    function startGame(isRetry = false) {
+        if (!selectedCategory && !isRetry) {
+            showAlert("請先選擇一個單元 (Part 1 - Part 4)！");
+            return;
+        }
+
+        if (!isRetry) {
+            let words = JSON.parse(JSON.stringify(wordBanks[selectedCategory].data));
+            const isRandom = document.getElementById('randomMode').checked;
+            if (isRandom) words.sort(() => Math.random() - 0.5);
+            state.currentWords = words;
+        } else {
+            state.currentWords = [...state.wrongWords];
+        }
+
+        state.currentIndex = 0;
+        state.correctCount = 0;
+        state.wrongCount = 0;
+        state.wrongWords = [];
+        state.combo = 0;
+        state.userRecordings = {};
+
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('resultScreen').style.display = 'none';
+        document.getElementById('gameArea').classList.add('active');
+        
+        state.startTime = Date.now();
+        state.timerInterval = setInterval(updateTimer, 1000);
+
+        loadWord();
+    }
+    
+    function quitGame() {
+        showConfirm("確定要結束目前的練習並返回列表嗎？", () => {
+            clearInterval(state.timerInterval);
+            stopRecording(); 
+            document.getElementById('gameArea').classList.remove('active');
+            document.getElementById('setupScreen').style.display = 'flex'; 
+        });
+    }
+
+    function updateTimer() {
+        const diff = Math.floor((Date.now() - state.startTime) / 1000);
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+    }
+
+    function loadWord() {
+        const currentObj = state.currentWords[state.currentIndex];
+        
+        document.getElementById('wordsLeft').innerText = state.currentWords.length - state.currentIndex;
+        document.getElementById('displayPos').innerText = currentObj.pos;
+        document.getElementById('displayMeaning').innerHTML = '<span style="color:#ccc; font-size:0.9em; font-style:italic;">(作答後顯示中文)</span>';
+        document.getElementById('displayDef').innerText = currentObj.enDef;
+        document.getElementById('displaySentence').innerHTML = '<span style="color:#ccc; font-size:0.9em; font-style:italic;">(作答後顯示例句)</span>';
+
+        const input = document.getElementById('answerInput');
+        input.value = '';
+        input.focus();
+        input.className = 'input-box';
+        document.getElementById('feedback').innerText = '';
+        
+        document.getElementById('recStatus').innerText = "錄音練習";
+        document.getElementById('playRecordBtn').disabled = true;
+        if (state.userRecordings[currentObj.word]) {
+             document.getElementById('playRecordBtn').disabled = false;
+             document.getElementById('recStatus').innerText = "已有錄音";
+        }
+
+        document.getElementById('submitBtn').style.display = 'inline-block';
+        document.getElementById('nextBtn').style.display = 'none';
+
+        playCurrentWord(0);
+    }
+
+    function revealInfo() {
+        const currentObj = state.currentWords[state.currentIndex];
+        document.getElementById('displayMeaning').innerText = currentObj.meaning;
+        const regex = new RegExp(`(${currentObj.word})`, 'gi');
+        const highlightedSentence = currentObj.sentence.replace(regex, '<em>$1</em>');
+        document.getElementById('displaySentence').innerHTML = `${highlightedSentence}<br><small style="color:#888">${currentObj.cnSentence}</small>`;
+    }
+
+    function checkAnswer() {
+        const input = document.getElementById('answerInput');
+        const userAns = input.value.trim().toLowerCase();
+        const currentObj = state.currentWords[state.currentIndex];
+        const correctAns = currentObj.word.toLowerCase();
+        const feedback = document.getElementById('feedback');
+
+        revealInfo();
+
+        if (userAns === correctAns) {
+            playSound('correct');
+            input.classList.add('correct');
+            state.correctCount++;
+            document.getElementById('scoreCorrect').innerText = state.correctCount;
+            
+            state.combo++;
+            let earned = 10 + (state.combo * 1);
+            
+            const oldLevel = 1 + Math.floor(state.tokens / 300);
+            const oldTitle = getTitle(oldLevel);
+            
+            state.tokens += earned; 
+            
+            const newLevel = 1 + Math.floor(state.tokens / 300);
+            const newTitle = getTitle(newLevel);
+            
+            if (newLevel > oldLevel) {
+                setTimeout(() => {
+                    if (newTitle !== oldTitle) {
+                        showAlert(`🎉 恭喜晉升！\n你現在是 Lv.${newLevel} 「${newTitle}」了！`);
+                        playSound('correct'); 
+                    } else {
+                        showAlert(`🆙 恭喜升級！\n目前等級：Lv.${newLevel}`);
+                    }
+                }, 500);
+            }
+
+            saveData();
+            
+            feedback.innerText = "Correct! +" + earned;
+            feedback.style.color = "green";
+
+            if (state.combo > 1) {
+                const comboEl = document.getElementById('comboDisplay');
+                comboEl.innerText = `COMBO x${state.combo}!`;
+                comboEl.classList.add('show');
+                setTimeout(() => comboEl.classList.remove('show'), 1000);
+            }
+        } else {
+            playSound('wrong');
+            input.classList.add('wrong');
+            state.wrongCount++;
+            state.combo = 0;
+            document.getElementById('scoreWrong').innerText = state.wrongCount;
+            
+            feedback.innerText = `Answer: ${correctAns}`;
+            feedback.style.color = "red";
+            
+            if (!state.wrongWords.some(w => w.word === currentObj.word)) {
+                state.wrongWords.push(currentObj);
+            }
+
+            setTimeout(() => input.classList.remove('wrong'), 500);
+        }
+
+        document.getElementById('submitBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'inline-block';
+        document.getElementById('nextBtn').focus();
+    }
+
+    function nextWord() {
+        state.currentIndex++;
+        if (state.currentIndex < state.currentWords.length) {
+            loadWord();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        clearInterval(state.timerInterval);
+        document.getElementById('gameArea').classList.remove('active');
+        document.getElementById('resultScreen').style.display = 'flex'; 
+        
+        const diff = Math.floor((Date.now() - state.startTime) / 1000);
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        
+        document.getElementById('finalTime').innerText = `${m}:${s}`;
+        document.getElementById('finalScore').innerText = Math.round((state.correctCount / state.currentWords.length) * 100);
+        document.getElementById('earnedTokens').innerText = "已存入";
+
+        const wrongList = document.getElementById('wrongWordsList');
+        const wrongArea = document.getElementById('wrongWordsArea');
+        wrongList.innerHTML = '';
+        if (state.wrongWords.length > 0) {
+            wrongArea.style.display = 'block';
+            state.wrongWords.forEach(obj => {
+                let li = document.createElement('li');
+                li.innerText = `${obj.word} (${obj.meaning})`;
+                wrongList.appendChild(li);
+            });
+        } else {
+            wrongArea.style.display = 'none';
+        }
+    }
+
+    function retryWrong() {
+        startGame(true);
+    }
+
+    document.getElementById('answerInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkAnswer();
+        }
+    });
+
+    function playCurrentWord(type) {
+        const text = state.currentWords[state.currentIndex].word;
+        speakText(text, type);
+        document.getElementById('answerInput').focus();
+    }
+
+    function playSentence() {
+        const sentence = state.currentWords[state.currentIndex].sentence;
+        speakText(sentence, 0); 
+    }
+
+    function speakText(text, type) {
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+
+        switch(type) {
+            case 0: 
+                utterance.rate = 1; utterance.pitch = 1;
+                break;
+            case 1: 
+                utterance.rate = 0.7; utterance.pitch = 0.5;
+                break;
+            case 2: 
+                utterance.rate = 1.3; utterance.pitch = 1.5;
+                break;
+            case 3: 
+                utterance.rate = 0.8; utterance.pitch = 0.2;
+                break;
+        }
+
+        synth.cancel();
+        synth.speak(utterance);
+    }
+
+    function toggleRecording() {
+        if (state.isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    }
+
+    async function startRecording() {
+        if (!navigator.mediaDevices) {
+            showAlert("您的瀏覽器不支援錄音，請使用 Chrome 並允許麥克風權限。");
+            return;
+        }
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            let options = { mimeType: 'audio/webm' };
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                options.mimeType = 'audio/webm';
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                options.mimeType = 'audio/mp4';
+            } else {
+                options = undefined;
+            }
+
+            state.mediaRecorder = new MediaRecorder(stream, options);
+            state.audioChunks = [];
+
+            state.mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) {
+                    state.audioChunks.push(event.data);
+                }
+            };
+
+            state.mediaRecorder.onstop = () => {
+                const mimeType = state.mediaRecorder.mimeType || 'audio/webm';
+                const audioBlob = new Blob(state.audioChunks, { type: mimeType });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const currentWord = state.currentWords[state.currentIndex].word;
+                
+                state.userRecordings[currentWord] = audioUrl;
+                document.getElementById('playRecordBtn').disabled = false; 
+            };
+
+            state.mediaRecorder.start();
+            state.isRecording = true;
+            document.getElementById('recordBtn').classList.add('recording');
+            document.getElementById('recStatus').innerText = "錄音中...";
+        } catch (err) {
+            console.error("錄音錯誤:", err);
+            showAlert("無法存取麥克風");
+        }
+    }
+
+    function stopRecording() {
+        if (state.mediaRecorder && state.isRecording) {
+            state.mediaRecorder.stop();
+            state.isRecording = false;
+            document.getElementById('recordBtn').classList.remove('recording');
+            document.getElementById('recStatus').innerText = "錄音完成";
+        }
+    }
+
+    function playUserRecording() {
+        const currentWord = state.currentWords[state.currentIndex].word;
+        const audioUrl = state.userRecordings[currentWord];
+        if (audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play().catch(e => console.error("播放失敗:", e));
+        }
+    }
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+        let freq = type === 'correct' ? 600 : 150;
+        let typeWave = type === 'correct' ? 'sine' : 'sawtooth';
+        
+        if (state.currentSfx === 'sfx_8bit') {
+             typeWave = 'square';
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = typeWave;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        if (type === 'correct') {
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+        } else {
+            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+        }
+
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // --- 商城邏輯 ---
+    const storeItems = {
+        avatars: [
+            { id: 'avatar_0', icon: '👦', price: 0 },
+            { id: 'avatar_1', icon: '👧', price: 50 },
+            { id: 'avatar_2', icon: '🐶', price: 100 },
+            { id: 'avatar_3', icon: '🐱', price: 100 },
+            { id: 'avatar_4', icon: '🤖', price: 200 },
+            { id: 'avatar_5', icon: '👽', price: 500 }
+        ],
+        themes: [
+            { id: 'theme_default', name: '藍天白雲', class: '', price: 0 },
+            { id: 'theme_forest', name: '森林系', class: 'theme-forest', price: 150 },
+            { id: 'theme_candy', name: '粉紅糖果', class: 'theme-candy', price: 150 },
+            { id: 'theme_dark', name: '深色護眼', class: 'theme-dark', price: 300 }
+        ],
+        sfx: [
+            { id: 'sfx_default', name: '標準音效', price: 0 },
+            { id: 'sfx_8bit', name: '8-bit 電玩音', price: 200 }
+        ]
+    };
+
+    function openStore() {
+        document.getElementById('storeModal').classList.add('active');
+        renderStore();
+    }
+
+    function renderStore() {
+        const renderSection = (items, containerId, type) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                const isOwned = state.unlockedItems.includes(item.id);
+                const isEquipped = (state.currentAvatar === item.icon) || (state.currentTheme === item.id) || (state.currentSfx === item.id);
+                
+                div.className = `store-item ${isOwned ? 'owned' : ''}`;
+                if (!isOwned && state.tokens < item.price) div.classList.add('locked');
+                
+                let content = type === 'avatar' ? `<div style="font-size:30px">${item.icon}</div>` : `<div>${item.name}</div>`;
+                content += `<span class="price-tag">${isOwned ? (isEquipped ? '使用中' : '已擁有') : item.price + '💰'}</span>`;
+                
+                div.innerHTML = content;
+                div.onclick = () => buyOrEquip(item, type);
+                container.appendChild(div);
+            });
+        };
+
+        renderSection(storeItems.avatars, 'avatarStore', 'avatar');
+        renderSection(storeItems.themes, 'themeStore', 'theme');
+        renderSection(storeItems.sfx, 'sfxStore', 'sfx');
+    }
+
+    function buyOrEquip(item, type) {
+        if (state.unlockedItems.includes(item.id)) {
+            if (type === 'avatar') state.currentAvatar = item.icon;
+            if (type === 'theme') { state.currentTheme = item.id; applyTheme(item.id); }
+            if (type === 'sfx') state.currentSfx = item.id;
+        } else {
+            if (state.tokens >= item.price) {
+                showConfirm(`確定花費 ${item.price} 購買嗎？`, () => {
+                    state.tokens -= item.price;
+                    state.unlockedItems.push(item.id);
+                    playSound('correct'); 
+                    saveData(); 
+                    renderStore(); 
+                });
+            } else {
+                showAlert("代幣不足！");
+                return;
+            }
+        }
+        saveData();
+        renderStore();
+    }
+
+    function applyTheme(themeId) {
+        document.body.className = '';
+        const theme = storeItems.themes.find(t => t.id === themeId);
+        if (theme && theme.class) {
+            document.body.classList.add(theme.class);
+        }
+    }
+
+    function setupAudio() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+        }
+    }
+
+    init();
+
+</script>
+</body>
+</html>
